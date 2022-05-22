@@ -27,7 +27,7 @@
     - Parallelism
     - Synchronization 
 
-## 5. Supported Exchanges (Data Feeds)
+## 5. Supported Exchanges (Market Data Feeds)
 
     - Coinbase
     - Crypto
@@ -35,6 +35,6 @@
     - Kraken 
     - Gemini
 
-## 6. Supported Exchnages (Order Feeds) 
+## 6. Supported Exchanges (Order Routing) 
 
     - FTX US

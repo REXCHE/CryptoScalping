@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -57,11 +56,16 @@ func main() {
 	var api_key string
 	fmt.Println("Please Enter Api Key: ")
 	fmt.Scanln(&api_key)
+	fmt.Println("")
 
 	// Input Api Secret
 	var api_secret string
 	fmt.Println("Please Enter Api Secret: ")
 	fmt.Scanln(&api_secret)
+	fmt.Println("")
+
+	// Connect to MongoDB
+	mongo := getMongoConnection()
 
 	// Initialize Client
 	client := o.New(api_key, api_secret)
@@ -70,14 +74,21 @@ func main() {
 	var max_threads int
 	fmt.Println("Please Enter Max Threads: ")
 	fmt.Scanln(&max_threads)
+	fmt.Println("")
 
 	num_exchanges := max_threads
 	runtime.GOMAXPROCS(num_exchanges)
 
 	// Create Ticker
+	var n_seconds int
+	fmt.Println("Please Enter Timeframe: ")
+	fmt.Scanln(&n_seconds)
+	fmt.Println("")
+
 	fmt.Println("Ticker Starting")
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(time.Duration(n_seconds) * time.Second)
 	var pnl float64
+	fmt.Println("")
 
 	/*
 		- This is Mid Frequency Trading
@@ -91,7 +102,7 @@ func main() {
 			Fetch Order Book from each Exchange in GoRoutine
 		*/
 
-		start := time.Now()
+		// start := time.Now()
 
 		coinbase_chan := make(chan []float64, 1)
 		kraken_chan := make(chan []float64, 1)
@@ -113,10 +124,10 @@ func main() {
 		go e.GetFTXOrderBook(ftx_currency, ftx_chan, &wg)
 
 		wg.Wait()
-		end := time.Now()
 
-		fmt.Println("Order Book Routines Time: ", end.Sub(start))
-		fmt.Println("")
+		// end := time.Now()
+		// fmt.Println("Order Book Routines Time: ", end.Sub(start))
+		// fmt.Println("")
 
 		/*
 			Fetch Data from Channels
@@ -179,8 +190,6 @@ func main() {
 		order_books = append(order_books, []float64{ftx_midpoint, ftx_weighted_midpoint})
 		fmt.Println("")
 
-		os.Exit(0)
-
 		/*
 			- Check for Order Book Skew
 
@@ -188,8 +197,39 @@ func main() {
 			- Otherwise do Nothing
 		*/
 
-		isSkewed := a.OrderBookSkew(order_books)
+		isSkewed := a.OrderBookSkew(order_books, max_threads)
 		fmt.Println("Order Book Skew: ", isSkewed)
+		fmt.Println("")
+
+		/*
+			- Append Data to MongoDB
+		*/
+
+		var MMD MarketMakingData
+		MMD.CoinbaseMidpoint = coinbase_midpoint
+		MMD.CoinbaseWeighted = coinbase_weighted_midpoint
+		MMD.CoinbaseBook = coinbase_book
+
+		MMD.KrakenMidpoint = kraken_midpoint
+		MMD.KrakenWeighted = kraken_weighted_midpoint
+		MMD.KrakenBook = kraken_book
+
+		MMD.GeminiMidpoint = gemini_midpoint
+		MMD.GeminiWeighted = gemini_weighted_midpoint
+		MMD.GeminiBook = gemini_book
+
+		MMD.CryptoMidpoint = crypto_midpoint
+		MMD.CryptoWeighted = crypto_weighted_midpoint
+		MMD.CryptoBook = crypto_book
+
+		MMD.FTXMidpoint = ftx_midpoint
+		MMD.FTXWeighted = ftx_weighted_midpoint
+		MMD.FTXBook = ftx_book
+
+		MMD.IsSkewed = isSkewed
+
+		appendMongo(mongo, MMD, 10000, "OrderBooks")
+		fmt.Println("Appending to Mongo")
 		fmt.Println("")
 
 		/*
@@ -216,107 +256,112 @@ func main() {
 		var bid_price_filled float64
 		var ask_price_filled float64
 
-		if isSkewed && !isLong {
+		placeOrder := false
+		if placeOrder {
 
-			/*
-			 Set Variables for Bid Order
-			 Quote Around Midpoint
-			*/
+			if isSkewed && !isLong {
 
-			OT.Market = ftx_currency
-			OT.Side = "buy"
-			OT.Price = ftx_midpoint - optimal_spread
-			OT.Type = "limit"
-			OT.Size = trade_size
-			OT.PostOnly = true
+				/*
+				 Set Variables for Bid Order
+				 Quote Around Midpoint
+				*/
 
-			/*
-				Place Bid Order from Avellaneda
-			*/
+				OT.Market = ftx_currency
+				OT.Side = "buy"
+				OT.Price = ftx_midpoint - optimal_spread
+				OT.Type = "limit"
+				OT.Size = trade_size
+				OT.PostOnly = true
 
-			resp, err := client.PlaceOrder(&OT)
+				/*
+					Place Bid Order from Avellaneda
+				*/
 
-			if err != nil {
-				log.Println(err)
-			}
-
-			fmt.Println("Order Result: ", resp.Success)
-
-			/*
-				- Check Open Orders
-				- We Placed a Bid Order Previously
-			*/
-
-			go func() {
-
-				resp, err := client.GetOpenOrders(ftx_currency)
+				resp, err := client.PlaceOrder(&OT)
 
 				if err != nil {
 					log.Println(err)
 				}
 
-				fmt.Println("Open Orders: ", resp.Success)
+				fmt.Println("Order Result: ", resp.Success)
 
-			}()
+				/*
+					- Check Open Orders
+					- We Placed a Bid Order Previously
+				*/
 
-			bid_price_filled = resp.Result.AvgFillPrice
+				go func() {
 
-		}
+					resp, err := client.GetOpenOrders(ftx_currency)
 
-		/*
-			- Order Management
-			- Only Triggered if Bid is Filled
-		*/
+					if err != nil {
+						log.Println(err)
+					}
 
-		if isLong {
+					fmt.Println("Open Orders: ", resp.Success)
 
-			/*
-				Set Variables for Ask Order
-				Quote Around Midpoint
-			*/
+				}()
 
-			OT.Market = ftx_currency
-			OT.Side = "sell"
-			OT.Price = ftx_midpoint + optimal_spread
-			OT.Type = "limit"
-			OT.Size = trade_size
-			OT.PostOnly = true
+				bid_price_filled = resp.Result.AvgFillPrice
 
-			/*
-				Place Ask Order from Avellaneda
-			*/
-
-			resp, err := client.PlaceOrder(&OT)
-
-			if err != nil {
-				log.Println(err)
 			}
 
-			fmt.Println("Order Result: ", resp.Success)
-
 			/*
-				- Check Open Orders
-				- We Placed A Sell Order Previously
+				- Order Management
+				- Only Triggered if Bid is Filled
 			*/
 
-			go func() {
+			if isLong {
 
-				resp, err := client.GetOpenOrders(ftx_currency)
+				/*
+					Set Variables for Ask Order
+					Quote Around Midpoint
+				*/
+
+				OT.Market = ftx_currency
+				OT.Side = "sell"
+				OT.Price = ftx_midpoint + optimal_spread
+				OT.Type = "limit"
+				OT.Size = trade_size
+				OT.PostOnly = true
+
+				/*
+					Place Ask Order from Avellaneda
+				*/
+
+				resp, err := client.PlaceOrder(&OT)
 
 				if err != nil {
 					log.Println(err)
 				}
 
-				fmt.Println("Open Orders: ", resp.Success)
+				fmt.Println("Order Result: ", resp.Success)
 
-			}()
+				/*
+					- Check Open Orders
+					- We Placed A Sell Order Previously
+				*/
 
-			ask_price_filled = resp.Result.AvgFillPrice
+				go func() {
+
+					resp, err := client.GetOpenOrders(ftx_currency)
+
+					if err != nil {
+						log.Println(err)
+					}
+
+					fmt.Println("Open Orders: ", resp.Success)
+
+				}()
+
+				ask_price_filled = resp.Result.AvgFillPrice
+
+			}
+
+			fmt.Println("Spread Captured (Total Profit): ", (ask_price_filled - bid_price_filled))
+			fmt.Println("Running PnL (Total Profit of Trial): ", pnl)
 
 		}
-
-		fmt.Println("Spread Captured (Total Profit): ", (ask_price_filled - bid_price_filled))
-		fmt.Println("Running PnL (Total Profit of Trial): ", pnl)
 
 	}
 

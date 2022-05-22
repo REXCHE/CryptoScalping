@@ -22,28 +22,24 @@ func OrderBookImbalance(bid_liquidity float64, best_bid float64, ask_liquidity f
 
 }
 
-func OrderBookSkew(order_books [][]float64) bool {
+func OrderBookSkew(order_books [][]float64, max_threads int) bool {
 
-	var isSkewed []bool
+	var isSkewed int
 
 	for i := 0; i < len(order_books); i++ {
 
 		if order_books[i][0] < order_books[i][1] {
-			isSkewed = append(isSkewed, true)
+			isSkewed++
 		} else {
-			isSkewed = append(isSkewed, false)
+			isSkewed++
 		}
 
 	}
 
-	skew := true
-
-	for i := 0; i < len(isSkewed); i++ {
-
-		skew = skew && isSkewed[i]
-
+	if isSkewed > ((max_threads / 2.0) + 1) {
+		return true
+	} else {
+		return false
 	}
-
-	return skew
 
 }

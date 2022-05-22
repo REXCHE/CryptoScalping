@@ -16,7 +16,7 @@ func GetCoinbaseOrderBook(currency string, c chan []float64, w *sync.WaitGroup) 
 		Method Returns the Coinbase Order Book
 	*/
 
-	url := "https://api.exchange.coinbase.com/products/" + currency + "/book?level=1"
+	url := "https://api.exchange.coinbase.com/products/" + currency + "/book?level=2"
 
 	req, err := http.NewRequest("GET", url, nil)
 
