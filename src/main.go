@@ -8,6 +8,7 @@ import (
 	"time"
 	a "v2/src/Avellaneda"
 	e "v2/src/Exchanges"
+	m "v2/src/Mongo"
 	o "v2/src/Orders"
 )
 
@@ -65,7 +66,7 @@ func main() {
 	fmt.Println("")
 
 	// Connect to MongoDB
-	mongo := getMongoConnection()
+	mongo := m.GetMongoConnection()
 
 	// Initialize Client
 	client := o.New(api_key, api_secret)
@@ -109,6 +110,8 @@ func main() {
 		gemini_chan := make(chan []float64, 1)
 		crypto_chan := make(chan []float64, 1)
 		ftx_chan := make(chan []float64, 1)
+		trade_chan := make(chan []float64)
+		ohlc_chan := make(chan []float64)
 
 		/*
 			Synchronize the Threads !
@@ -122,6 +125,8 @@ func main() {
 		go e.GetGeminiOrderBook(gemini_currency, gemini_chan, &wg)
 		go e.GetCryptoOrderBook(crypto_currency, crypto_chan, &wg)
 		go e.GetFTXOrderBook(ftx_currency, ftx_chan, &wg)
+		go e.GetFTXRecentTrades(ftx_currency, trade_chan, &wg)
+		go e.GetFTXOHLC(ftx_currency, ohlc_chan, &wg, "60")
 
 		wg.Wait()
 
@@ -205,7 +210,7 @@ func main() {
 			- Append Data to MongoDB
 		*/
 
-		var MMD MarketMakingData
+		var MMD m.MarketMakingData
 		MMD.CoinbaseMidpoint = coinbase_midpoint
 		MMD.CoinbaseWeighted = coinbase_weighted_midpoint
 		MMD.CoinbaseBook = coinbase_book
@@ -228,7 +233,7 @@ func main() {
 
 		MMD.IsSkewed = isSkewed
 
-		appendMongo(mongo, MMD, 10000, "OrderBooks")
+		m.AppendMongo(mongo, MMD, 10000, "OrderBooks")
 		fmt.Println("Appending to Mongo")
 		fmt.Println("")
 

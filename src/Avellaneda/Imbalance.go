@@ -30,13 +30,11 @@ func OrderBookSkew(order_books [][]float64, max_threads int) bool {
 
 		if order_books[i][0] < order_books[i][1] {
 			isSkewed++
-		} else {
-			isSkewed++
 		}
 
 	}
 
-	if isSkewed > ((max_threads / 2.0) + 1) {
+	if isSkewed > (int(max_threads/2) + 1) {
 		return true
 	} else {
 		return false

@@ -118,7 +118,7 @@ func TestFTX(t *testing.T) {
 
 func TestFTXSigma(t *testing.T) {
 
-	ftx_chan := make(chan FTXTrades, 1)
+	ftx_chan := make(chan []float64, 1)
 	var wg sync.WaitGroup
 	wg.Add(1)
 
@@ -133,7 +133,7 @@ func TestFTXSigma(t *testing.T) {
 
 func TestFTXOHLC(t *testing.T) {
 
-	ftx_chan := make(chan FTXOHLC, 1)
+	ftx_chan := make(chan []float64, 1)
 	var wg sync.WaitGroup
 	wg.Add(1)
 

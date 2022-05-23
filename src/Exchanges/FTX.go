@@ -72,7 +72,7 @@ func getFTXKappa(fb FTXBook, depth int) (float64, float64, float64, float64) {
 
 }
 
-func GetFTXRecentTrades(currency string, c chan FTXTrades, w *sync.WaitGroup) {
+func GetFTXRecentTrades(currency string, c chan []float64, w *sync.WaitGroup) {
 
 	/*
 		Method Returns the most recent trades on FTX Book
@@ -101,12 +101,26 @@ func GetFTXRecentTrades(currency string, c chan FTXTrades, w *sync.WaitGroup) {
 	var ft FTXTrades
 	json.NewDecoder(bytes.NewReader(body)).Decode(&ft)
 
-	c <- ft
+	c <- getTrades(ft)
 	w.Done()
 
 }
 
-func GetFTXOHLC(currency string, c chan FTXOHLC, w *sync.WaitGroup, resolution string) {
+func getTrades(class FTXTrades) []float64 {
+
+	var arr []float64
+
+	for i := 0; i < len(class.Result); i++ {
+
+		arr = append(arr, class.Result[i].Price)
+
+	}
+
+	return arr
+
+}
+
+func GetFTXOHLC(currency string, c chan []float64, w *sync.WaitGroup, resolution string) {
 
 	/*
 		Method Returns the OHLC from FTX Book
@@ -135,7 +149,20 @@ func GetFTXOHLC(currency string, c chan FTXOHLC, w *sync.WaitGroup, resolution s
 	var ft FTXOHLC
 	json.NewDecoder(bytes.NewReader(body)).Decode(&ft)
 
-	c <- ft
+	c <- getCandles(ft)
 	w.Done()
+
+}
+
+func getCandles(class FTXOHLC) []float64 {
+
+	var arr []float64
+
+	arr = append(arr, class.Result[0].Open)
+	arr = append(arr, class.Result[0].High)
+	arr = append(arr, class.Result[0].Low)
+	arr = append(arr, class.Result[0].Close)
+
+	return arr
 
 }
