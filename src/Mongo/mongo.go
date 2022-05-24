@@ -186,6 +186,9 @@ func FetchMongoDB(client *mongo.Client, coll_name string) []MarketMakingData {
 			mmd.FTXBook = append(mmd.FTXBook, itr["ftxBook"].(primitive.A)[i].(float64))
 		}
 
+		// More Additional Shit
+		mmd.IsSkewed = itr["isSkewed"].(bool)
+
 		MMD = append(MMD, mmd)
 
 	}

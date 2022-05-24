@@ -125,6 +125,7 @@ func main() {
 		go e.GetGeminiOrderBook(gemini_currency, gemini_chan, &wg)
 		go e.GetCryptoOrderBook(crypto_currency, crypto_chan, &wg)
 		go e.GetFTXOrderBook(ftx_currency, ftx_chan, &wg)
+
 		go e.GetFTXRecentTrades(ftx_currency, trade_chan, &wg)
 		go e.GetFTXOHLC(ftx_currency, ohlc_chan, &wg, "60")
 
@@ -208,6 +209,7 @@ func main() {
 
 		/*
 			- Append Data to MongoDB
+			- Data Provides Statistical Edge
 		*/
 
 		var MMD m.MarketMakingData

@@ -15,14 +15,15 @@ func GetCryptoOrderBook(currency string, c chan []float64, w *sync.WaitGroup) {
 		Method Returns the Crypto Order Book
 	*/
 
-	// https: //api.crypto.com/v2/{method}
-	// https://{URL}/v2/public/get-book?instrument_name=BTC_USDT&depth=10
 	url := "https://api.crypto.com/v2/public/get-book?instrument_name=" + currency + "&depth=20"
 
 	req, err := http.NewRequest("GET", url, nil)
 
 	if err != nil {
 		log.Println("Error Fetching Kraken Order Book")
+		c <- []float64{0, 1, 0, 1}
+		w.Done()
+		return
 	}
 
 	req.Header.Add("Accept", "application/json")
@@ -31,6 +32,9 @@ func GetCryptoOrderBook(currency string, c chan []float64, w *sync.WaitGroup) {
 
 	if err != nil {
 		log.Println("Error Fetching Kraken Order Book")
+		c <- []float64{0, 1, 0, 1}
+		w.Done()
+		return
 	}
 
 	defer res.Body.Close()

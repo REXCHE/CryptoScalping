@@ -27,6 +27,9 @@ func GetFTXOrderBook(currency string, c chan []float64, w *sync.WaitGroup) {
 
 	if err != nil {
 		log.Println("Error Fetching FTX Order Book")
+		c <- []float64{0, 1, 0, 1}
+		w.Done()
+		return
 	}
 
 	req.Header.Add("Accept", "application/json")
@@ -35,6 +38,9 @@ func GetFTXOrderBook(currency string, c chan []float64, w *sync.WaitGroup) {
 
 	if err != nil {
 		log.Println("Error Fetching FTX Order Book")
+		c <- []float64{0, 1, 0, 1}
+		w.Done()
+		return
 	}
 
 	defer res.Body.Close()

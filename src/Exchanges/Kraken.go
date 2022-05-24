@@ -22,6 +22,9 @@ func GetKrakenOrderBook(currency string, c chan []float64, w *sync.WaitGroup) {
 
 	if err != nil {
 		log.Println("Error Fetching Kraken Order Book")
+		c <- []float64{0, 1, 0, 1}
+		w.Done()
+		return
 	}
 
 	req.Header.Add("Accept", "application/json")
@@ -30,6 +33,9 @@ func GetKrakenOrderBook(currency string, c chan []float64, w *sync.WaitGroup) {
 
 	if err != nil {
 		log.Println("Error Fetching Kraken Order Book")
+		c <- []float64{0, 1, 0, 1}
+		w.Done()
+		return
 	}
 
 	defer res.Body.Close()
