@@ -2,6 +2,10 @@
 
 # Feature Set
 
+    - Open source most advanced, high performance crypto market making system   
+    - Effortlessly find a statistical edge in high frequency trading 
+    - Generate automated alpha with neutral SPX beta
+
 ## 1. Avellaneda Stoikov
 
     - Optimal Spread

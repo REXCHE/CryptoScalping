@@ -40,6 +40,15 @@ type MarketMakingData struct {
 
 	// Additional Shit
 	IsSkewed bool
+
+	// OHLC
+	Open  float64
+	High  float64
+	Low   float64
+	Close float64
+
+	// Recent History
+	RecentTrades []float64
 }
 
 func GetMongoConnection() *mongo.Client {
@@ -121,6 +130,13 @@ func AppendMongo(client *mongo.Client, class MarketMakingData, capacity int64, c
 			{Key: "ftxBook", Value: class.FTXBook},
 
 			{Key: "isSkewed", Value: class.IsSkewed},
+
+			{Key: "open", Value: class.Open},
+			{Key: "high", Value: class.High},
+			{Key: "low", Value: class.Low},
+			{Key: "close", Value: class.Close},
+
+			{Key: "recentTrades", Value: class.RecentTrades},
 		})
 
 	if err != nil {

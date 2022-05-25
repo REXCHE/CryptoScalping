@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"testing"
+
+	"github.com/montanaflynn/stats"
 )
 
 func TestMongoDB(t *testing.T) {
@@ -29,8 +31,8 @@ func TestMongoDB(t *testing.T) {
 	}
 
 	// Compute Sample Statistics
-	mean := getMean(ftx_divergence)
-	std := getStandardDeviation(ftx_divergence, mean)
+	mean, _ := stats.Mean(ftx_divergence)
+	std, _ := stats.StandardDeviation(ftx_divergence)
 	trigger_threshold := mean - (1 * std)
 	fmt.Println("Trigger Threshold: ", trigger_threshold)
 	fmt.Println("")
@@ -70,39 +72,5 @@ func TestMongoDB(t *testing.T) {
 	fmt.Println("Trade Count: ", trade_count)
 	fmt.Println("Average Win: ", (average_win / trade_count))
 	fmt.Println("Average Loss: ", (average_loss / trade_count))
-
-}
-
-/*
-	Helper Methods Start Here
-*/
-
-func getMean(arr []float64) float64 {
-
-	sum := 0.0
-
-	for i := 0; i < len(arr); i++ {
-
-		sum += arr[i]
-
-	}
-
-	return sum / float64(len(arr))
-
-}
-
-func getStandardDeviation(arr []float64, mean float64) float64 {
-
-	sum := 0.0
-
-	for i := 0; i < len(arr); i++ {
-
-		sum += math.Pow(mean-arr[i], 2)
-
-	}
-
-	variance := sum / float64(len(arr))
-
-	return math.Sqrt(variance)
 
 }

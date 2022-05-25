@@ -6,7 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
+	"time"
 )
 
 func GetFTXOrderBook(currency string, c chan []float64, w *sync.WaitGroup) {
@@ -84,12 +86,22 @@ func GetFTXRecentTrades(currency string, c chan []float64, w *sync.WaitGroup) {
 		Method Returns the most recent trades on FTX Book
 	*/
 
-	url := "https://ftx.us/api/markets/" + currency + "/trades"
+	end_point := time.Now()
+	end_time := time.Now().Unix()
+	start_time := end_point.Add(-time.Duration(60) * time.Minute).Unix()
+
+	start := strconv.Itoa(int(start_time))
+	end := strconv.Itoa(int(end_time))
+
+	url := "https://ftx.us/api/markets/" + currency + "/trades?start_time=" + start + "&end_time=" + end
 
 	req, err := http.NewRequest("GET", url, nil)
 
 	if err != nil {
 		log.Println("Error Fetching FTX Recent Trades")
+		c <- []float64{0}
+		w.Done()
+		return
 	}
 
 	req.Header.Add("Accept", "application/json")
@@ -98,6 +110,9 @@ func GetFTXRecentTrades(currency string, c chan []float64, w *sync.WaitGroup) {
 
 	if err != nil {
 		log.Println("Error Fetching FTX Recent Trades")
+		c <- []float64{0}
+		w.Done()
+		return
 	}
 
 	defer res.Body.Close()
@@ -138,6 +153,9 @@ func GetFTXOHLC(currency string, c chan []float64, w *sync.WaitGroup, resolution
 
 	if err != nil {
 		log.Println("Error Fetching FTX OHLC")
+		c <- []float64{0}
+		w.Done()
+		return
 	}
 
 	req.Header.Add("Accept", "application/json")
@@ -146,6 +164,9 @@ func GetFTXOHLC(currency string, c chan []float64, w *sync.WaitGroup, resolution
 
 	if err != nil {
 		log.Println("Error Fetching FTX OHLC")
+		c <- []float64{0}
+		w.Done()
+		return
 	}
 
 	defer res.Body.Close()

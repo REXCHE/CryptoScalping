@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"runtime"
 	"sync"
 	"time"
 	a "v2/src/Avellaneda"
@@ -71,15 +70,6 @@ func main() {
 	// Initialize Client
 	client := o.New(api_key, api_secret)
 
-	// Set Max Threads
-	var max_threads int
-	fmt.Println("Please Enter Max Threads: ")
-	fmt.Scanln(&max_threads)
-	fmt.Println("")
-
-	num_exchanges := max_threads
-	runtime.GOMAXPROCS(num_exchanges)
-
 	// Create Ticker
 	var n_seconds int
 	fmt.Println("Please Enter Timeframe: ")
@@ -110,15 +100,16 @@ func main() {
 		gemini_chan := make(chan []float64, 1)
 		crypto_chan := make(chan []float64, 1)
 		ftx_chan := make(chan []float64, 1)
-		trade_chan := make(chan []float64)
-		ohlc_chan := make(chan []float64)
+
+		trade_chan := make(chan []float64, 1)
+		ohlc_chan := make(chan []float64, 1)
 
 		/*
 			Synchronize the Threads !
 		*/
 
 		var wg sync.WaitGroup
-		wg.Add(num_exchanges)
+		wg.Add(7)
 
 		go e.GetCoinbaseOrderBook(coinbase_currency, coinbase_chan, &wg)
 		go e.GetKrakenOrderBook(kraken_currency, kraken_chan, &wg)
@@ -196,6 +187,16 @@ func main() {
 		order_books = append(order_books, []float64{ftx_midpoint, ftx_weighted_midpoint})
 		fmt.Println("")
 
+		recent_trades := <-trade_chan
+		fmt.Println("Recent Trades: ")
+		fmt.Println(recent_trades)
+		fmt.Println("")
+
+		ohlc := <-ohlc_chan
+		fmt.Println("OHLC: ")
+		fmt.Println(ohlc)
+		fmt.Println("")
+
 		/*
 			- Check for Order Book Skew
 
@@ -203,7 +204,7 @@ func main() {
 			- Otherwise do Nothing
 		*/
 
-		isSkewed := a.OrderBookSkew(order_books, max_threads)
+		isSkewed := a.OrderBookSkew(order_books, 5)
 		fmt.Println("Order Book Skew: ", isSkewed)
 		fmt.Println("")
 
@@ -213,6 +214,7 @@ func main() {
 		*/
 
 		var MMD m.MarketMakingData
+
 		MMD.CoinbaseMidpoint = coinbase_midpoint
 		MMD.CoinbaseWeighted = coinbase_weighted_midpoint
 		MMD.CoinbaseBook = coinbase_book
@@ -234,6 +236,13 @@ func main() {
 		MMD.FTXBook = ftx_book
 
 		MMD.IsSkewed = isSkewed
+
+		MMD.Open = ohlc[0]
+		MMD.High = ohlc[1]
+		MMD.Low = ohlc[2]
+		MMD.Close = ohlc[3]
+
+		MMD.RecentTrades = recent_trades
 
 		m.AppendMongo(mongo, MMD, 10000, "OrderBooks")
 		fmt.Println("Appending to Mongo")
