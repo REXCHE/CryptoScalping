@@ -96,9 +96,9 @@ func TestCrypto(t *testing.T) {
 
 }
 
-// /*
-// 	FTX US
-// */
+/*
+	FTX US
+*/
 
 func TestFTX(t *testing.T) {
 
@@ -113,6 +113,7 @@ func TestFTX(t *testing.T) {
 	fmt.Println("FTX")
 	fmt.Println("Best Bid: ", ftx_book[0], "Best Ask: ", ftx_book[1])
 	fmt.Println("Bid: ", ftx_book[2], "Ask: ", ftx_book[3])
+	fmt.Println("")
 
 }
 
@@ -128,6 +129,16 @@ func TestFTXSigma(t *testing.T) {
 	ftx_trades := <-ftx_chan
 	fmt.Println("FTX")
 	fmt.Println(ftx_trades)
+	fmt.Println("")
+
+	var w sync.WaitGroup
+	w.Add(1)
+	vol_chan := make(chan float64)
+	go GetRecentTradesVol(ftx_trades, vol_chan, &w)
+
+	vol := <-vol_chan
+	fmt.Println("Recent Volatility: ", vol)
+	fmt.Println("")
 
 }
 
@@ -143,5 +154,6 @@ func TestFTXOHLC(t *testing.T) {
 	ftx_ohlc := <-ftx_chan
 	fmt.Println("FTX")
 	fmt.Println(ftx_ohlc)
+	fmt.Println("")
 
 }

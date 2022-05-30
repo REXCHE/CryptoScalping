@@ -16,6 +16,7 @@
 
 ## 2. Order Book Scalping
 
+    - Advanced Time Series Prediction
     - High Probability Trades
     - Short Term Directional Bets
 
@@ -42,3 +43,4 @@
 ## 6. Supported Exchanges (Order Routing) 
 
     - FTX US
+    - Kraken (Coming Next)

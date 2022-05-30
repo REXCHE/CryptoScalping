@@ -9,6 +9,8 @@ import (
 func GetCorrelationSignal(price_data []float64, period_length int) float64 {
 
 	/*
+		- Might be a good idea to test several period lengths in parallel
+
 		Input:
 		1. Price Series Data
 		2. Rolling Correlation Length
@@ -41,11 +43,15 @@ func GetCorrelationSignal(price_data []float64, period_length int) float64 {
 func GetNonLinearSignal(price_data []float64) float64 {
 
 	/*
+		- Might be a good idea to test several period lengths in parallel
+
 		Input:
 		1. Price Data
 
 		Output:
 		1. A real number to determine if the process is white noise
+			or is a positive expected value
+			or is a negative expected value
 	*/
 
 	return 0

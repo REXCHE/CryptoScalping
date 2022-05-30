@@ -33,7 +33,7 @@ func TestMongoDB(t *testing.T) {
 	// Compute Sample Statistics
 	mean, _ := stats.Mean(ftx_divergence)
 	std, _ := stats.StandardDeviation(ftx_divergence)
-	trigger_threshold := mean - (1 * std)
+	trigger_threshold := mean - (0 * std)
 	fmt.Println("Trigger Threshold: ", trigger_threshold)
 	fmt.Println("")
 

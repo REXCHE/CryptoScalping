@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/montanaflynn/stats"
 )
 
 func GetFTXOrderBook(currency string, c chan []float64, w *sync.WaitGroup) {
@@ -191,5 +193,14 @@ func getCandles(class FTXOHLC) []float64 {
 	arr = append(arr, class.Result[0].Close)
 
 	return arr
+
+}
+
+func GetRecentTradesVol(prices []float64, c chan float64, w *sync.WaitGroup) {
+
+	vol, _ := stats.StandardDeviation(prices)
+
+	c <- vol
+	w.Done()
 
 }

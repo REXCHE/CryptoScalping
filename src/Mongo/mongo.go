@@ -12,45 +12,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type MarketMakingData struct {
-	// Coinbase
-	CoinbaseMidpoint float64
-	CoinbaseWeighted float64
-	CoinbaseBook     []float64
-
-	// Kraken
-	KrakenMidpoint float64
-	KrakenWeighted float64
-	KrakenBook     []float64
-
-	// Gemini
-	GeminiMidpoint float64
-	GeminiWeighted float64
-	GeminiBook     []float64
-
-	// Crypto
-	CryptoMidpoint float64
-	CryptoWeighted float64
-	CryptoBook     []float64
-
-	// FTX US
-	FTXMidpoint float64
-	FTXWeighted float64
-	FTXBook     []float64
-
-	// Additional Shit
-	IsSkewed bool
-
-	// OHLC
-	Open  float64
-	High  float64
-	Low   float64
-	Close float64
-
-	// Recent History
-	RecentTrades []float64
-}
-
 func GetMongoConnection() *mongo.Client {
 
 	password := "APuXI7kPYRKNhaYA"
@@ -130,6 +91,7 @@ func AppendMongo(client *mongo.Client, class MarketMakingData, capacity int64, c
 			{Key: "ftxBook", Value: class.FTXBook},
 
 			{Key: "isSkewed", Value: class.IsSkewed},
+			{Key: "spread", Value: class.Spread},
 
 			{Key: "open", Value: class.Open},
 			{Key: "high", Value: class.High},
@@ -137,6 +99,15 @@ func AppendMongo(client *mongo.Client, class MarketMakingData, capacity int64, c
 			{Key: "close", Value: class.Close},
 
 			{Key: "recentTrades", Value: class.RecentTrades},
+			{Key: "recentVolatility", Value: class.Volatility},
+
+			{Key: "gamma", Value: class.Gamma},
+			{Key: "kappa", Value: class.Kappa},
+			{Key: "tau", Value: class.Tau},
+			{Key: "sigma", Value: class.Sigma},
+
+			// TODO
+
 		})
 
 	if err != nil {

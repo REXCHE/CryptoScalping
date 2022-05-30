@@ -1,14 +1,16 @@
 package Orders
 
-import (
-	"net/http"
-	"time"
-)
+import "time"
 
-type FtxClient struct {
-	Client *http.Client
-	Api    string
-	Secret []byte
+type NewOrder struct {
+	Market     string  `json:"market"`
+	Side       string  `json:"side"`
+	Price      float64 `json:"price"`
+	Type       string  `json:"type"`
+	Size       float64 `json:"size"`
+	ReduceOnly bool    `json:"reduceOnly"`
+	Ioc        bool    `json:"ioc"`
+	PostOnly   bool    `json:"postOnly"`
 }
 
 type NewOrderResponse struct {
@@ -38,4 +40,9 @@ type Order struct {
 	Ioc           bool      `json:"ioc"`
 	PostOnly      bool      `json:"postOnly"`
 	ClientID      string    `json:"clientId"`
+}
+
+type Response struct {
+	Success bool        `json:"success"`
+	Result  interface{} `json:"result"`
 }

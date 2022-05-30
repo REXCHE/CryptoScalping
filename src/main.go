@@ -46,6 +46,7 @@ var ftx_currency string = "ETH/USD"
 */
 
 var isLong bool = false
+var isCaptured = false
 var trade_size float64 = 1.0 // ETH, BTC, etc...?
 
 func main() {
@@ -68,7 +69,7 @@ func main() {
 	mongo := m.GetMongoConnection()
 
 	// Initialize Client
-	client := o.New(api_key, api_secret)
+	client := o.New(api_key, api_secret, "")
 
 	// Create Ticker
 	var n_seconds int
@@ -76,6 +77,13 @@ func main() {
 	fmt.Scanln(&n_seconds)
 	fmt.Println("")
 
+	// Trade or Collect Data?
+	var placeOrder bool
+	fmt.Println("Place Orders: true or false")
+	fmt.Scanln(&placeOrder)
+	fmt.Println("")
+
+	// Bot is Running
 	fmt.Println("Ticker Starting")
 	ticker := time.NewTicker(time.Duration(n_seconds) * time.Second)
 	var pnl float64
@@ -192,6 +200,16 @@ func main() {
 		fmt.Println(recent_trades)
 		fmt.Println("")
 
+		/*
+			- Compute Sigma in Parallel
+			- Recent Trades Can be Large
+		*/
+
+		var w sync.WaitGroup
+		w.Add(1)
+		vol_chan := make(chan float64, 1)
+		go e.GetRecentTradesVol(recent_trades, vol_chan, &w)
+
 		ohlc := <-ohlc_chan
 		fmt.Println("OHLC: ")
 		fmt.Println(ohlc)
@@ -208,45 +226,8 @@ func main() {
 		fmt.Println("Order Book Skew: ", isSkewed)
 		fmt.Println("")
 
-		/*
-			- Append Data to MongoDB
-			- Data Provides Statistical Edge
-		*/
-
-		var MMD m.MarketMakingData
-
-		MMD.CoinbaseMidpoint = coinbase_midpoint
-		MMD.CoinbaseWeighted = coinbase_weighted_midpoint
-		MMD.CoinbaseBook = coinbase_book
-
-		MMD.KrakenMidpoint = kraken_midpoint
-		MMD.KrakenWeighted = kraken_weighted_midpoint
-		MMD.KrakenBook = kraken_book
-
-		MMD.GeminiMidpoint = gemini_midpoint
-		MMD.GeminiWeighted = gemini_weighted_midpoint
-		MMD.GeminiBook = gemini_book
-
-		MMD.CryptoMidpoint = crypto_midpoint
-		MMD.CryptoWeighted = crypto_weighted_midpoint
-		MMD.CryptoBook = crypto_book
-
-		MMD.FTXMidpoint = ftx_midpoint
-		MMD.FTXWeighted = ftx_weighted_midpoint
-		MMD.FTXBook = ftx_book
-
-		MMD.IsSkewed = isSkewed
-
-		MMD.Open = ohlc[0]
-		MMD.High = ohlc[1]
-		MMD.Low = ohlc[2]
-		MMD.Close = ohlc[3]
-
-		MMD.RecentTrades = recent_trades
-
-		m.AppendMongo(mongo, MMD, 10000, "OrderBooks")
-		fmt.Println("Appending to Mongo")
-		fmt.Println("")
+		w.Wait()
+		volatility := <-vol_chan
 
 		/*
 			- Enter Long Position
@@ -254,71 +235,173 @@ func main() {
 		*/
 
 		// We need the Order Ticket
-		var OT o.OrderTicket
+		var OT o.NewOrder
 
 		// Avellaneda Parameters
 		gamma := 0.33
 		kappa := ftx_book[2] + ftx_book[3]
-		sigma := 2.00
-		tau := 1 / 24.0
+
+		// Optimize These
+		sigma := volatility
+		tau := 9.0 / 24.0
 
 		/*
-			- Compute Optimal Spreas
+			- Compute Optimal Spread
 			- Avellaneda or Ornstein Uhlenbeck
 		*/
 
 		optimal_spread := a.GetOptimalSpread(ftx_midpoint, gamma, kappa, sigma, tau)
+		fmt.Println("Optimal Spread: ", optimal_spread)
+		fmt.Println("")
+
+		/*
+			- Append Data to MongoDB
+			- Data Provides Statistical Edge
+			- Parallel !!!
+		*/
+
+		var MMD m.MarketMakingData
+
+		go func() {
+
+			MMD.CoinbaseMidpoint = coinbase_midpoint
+			MMD.CoinbaseWeighted = coinbase_weighted_midpoint
+			MMD.CoinbaseBook = coinbase_book
+
+			MMD.KrakenMidpoint = kraken_midpoint
+			MMD.KrakenWeighted = kraken_weighted_midpoint
+			MMD.KrakenBook = kraken_book
+
+			MMD.GeminiMidpoint = gemini_midpoint
+			MMD.GeminiWeighted = gemini_weighted_midpoint
+			MMD.GeminiBook = gemini_book
+
+			MMD.CryptoMidpoint = crypto_midpoint
+			MMD.CryptoWeighted = crypto_weighted_midpoint
+			MMD.CryptoBook = crypto_book
+
+			MMD.FTXMidpoint = ftx_midpoint
+			MMD.FTXWeighted = ftx_weighted_midpoint
+			MMD.FTXBook = ftx_book
+
+			MMD.IsSkewed = isSkewed
+
+			MMD.Spread = optimal_spread
+			MMD.Gamma = gamma
+			MMD.Kappa = kappa
+			MMD.Tau = tau
+			MMD.Sigma = sigma
+
+			MMD.Open = ohlc[0]
+			MMD.High = ohlc[1]
+			MMD.Low = ohlc[2]
+			MMD.Close = ohlc[3]
+
+			MMD.RecentTrades = recent_trades
+			MMD.Volatility = volatility
+
+			m.AppendMongo(mongo, MMD, 10000, "OrderBooks")
+			fmt.Println("Appending to Mongo")
+			fmt.Println("")
+
+		}()
+
+		/*
+			- Spread must be greater than fees
+		*/
+
+		// if optimal_spread < 1.0 {
+		// 	placeOrder = false
+		// 	fmt.Println("Optimal Spread Too Small")
+		// 	fmt.Println("")
+		// } else {
+		// 	placeOrder = true
+		// 	fmt.Println("Optimal Spread is Profitable")
+		// 	fmt.Println("")
+		// }
 
 		var bid_price_filled float64
 		var ask_price_filled float64
 
-		placeOrder := false
 		if placeOrder {
 
 			if isSkewed && !isLong {
 
 				/*
-				 Set Variables for Bid Order
-				 Quote Around Midpoint
+					- Set Variables for Bid Order
+					- Quote Around Midpoint
 				*/
 
 				OT.Market = ftx_currency
 				OT.Side = "buy"
-				OT.Price = ftx_midpoint - optimal_spread
+
+				if ftx_book[0] < (ftx_weighted_midpoint-optimal_spread) && ftx_book[0] != 0 {
+					OT.Price = ftx_book[0]
+				} else {
+					OT.Price = ftx_weighted_midpoint - optimal_spread
+				}
+
 				OT.Type = "limit"
 				OT.Size = trade_size
 				OT.PostOnly = true
 
 				/*
-					Place Bid Order from Avellaneda
+					- Place Bid Order from Avellaneda
 				*/
 
-				resp, err := client.PlaceOrder(&OT)
+				resp, err := client.PlaceOrder(OT.Market, OT.Side, OT.Price, OT.Type, OT.Size, OT.ReduceOnly, OT.Ioc, OT.PostOnly)
 
 				if err != nil {
 					log.Println(err)
 				}
 
-				fmt.Println("Order Result: ", resp.Success)
+				fmt.Println("Order Result: ", resp)
 
 				/*
+					- Loop thru ticker
 					- Check Open Orders
 					- We Placed a Bid Order Previously
 				*/
 
-				go func() {
+				bid_timer := time.NewTimer(time.Duration(n_seconds) * time.Second)
+				var ID int
+				var isFilled bool
+				var bid_price_filled float64
 
-					resp, err := client.GetOpenOrders(ftx_currency)
+				c0 := make(chan bool, 1)
+				c1 := make(chan float64, 1)
+				c2 := make(chan int, 1)
+				var temp sync.WaitGroup
+
+				temp.Add(1)
+				go order(client, bid_timer, &temp, c0, c1, c2)
+				temp.Wait()
+
+				isFilled = <-c0
+				bid_price_filled = <-c1
+				ID = <-c2
+
+				if isFilled {
+
+					isLong = true
+					fmt.Println("Bid Order Filled: ", bid_price_filled)
+					fmt.Println("")
+
+				} else {
+
+					fmt.Println("Bid Order Not Filled")
+					fmt.Println("Canceling Order")
+					fmt.Println("")
+
+					resp, err := client.CancelOrder(int64(ID))
 
 					if err != nil {
 						log.Println(err)
 					}
 
-					fmt.Println("Open Orders: ", resp.Success)
+					fmt.Println("Order Cancelled: ", resp.Success)
 
-				}()
-
-				bid_price_filled = resp.Result.AvgFillPrice
+				}
 
 			}
 
@@ -330,52 +413,136 @@ func main() {
 			if isLong {
 
 				/*
-					Set Variables for Ask Order
-					Quote Around Midpoint
+					- A full time frame has passed
+					- We need to update market quotes
+				*/
+
+				ftx_chan2 := make(chan []float64, 1)
+				var wg2 sync.WaitGroup
+				wg2.Add(1)
+
+				go e.GetFTXOrderBook(ftx_currency, ftx_chan2, &wg2)
+				wg2.Wait()
+
+				best_ask := <-ftx_chan2
+
+				/*
+					- Set Variables for Ask Order
+					- Quote Around Midpoint
 				*/
 
 				OT.Market = ftx_currency
 				OT.Side = "sell"
-				OT.Price = ftx_midpoint + optimal_spread
+
+				if best_ask[1] > (ftx_weighted_midpoint + optimal_spread) {
+					OT.Price = best_ask[1]
+				} else {
+					OT.Price = ftx_weighted_midpoint + optimal_spread
+				}
+
 				OT.Type = "limit"
 				OT.Size = trade_size
 				OT.PostOnly = true
 
 				/*
-					Place Ask Order from Avellaneda
+					- Place Ask Order from Avellaneda
 				*/
 
-				resp, err := client.PlaceOrder(&OT)
+				resp, err := client.PlaceOrder(OT.Market, OT.Side, OT.Price, OT.Type, OT.Size, OT.ReduceOnly, OT.Ioc, OT.PostOnly)
 
 				if err != nil {
 					log.Println(err)
 				}
 
-				fmt.Println("Order Result: ", resp.Success)
+				fmt.Println("Order Result: ", resp)
 
 				/*
+					- Loop thru ticker
 					- Check Open Orders
 					- We Placed A Sell Order Previously
 				*/
 
-				go func() {
+				ask_timer := time.NewTimer(time.Duration(n_seconds) * time.Second)
+				var ID int
+				var isFilled bool
+				var ask_price_filled float64
 
-					resp, err := client.GetOpenOrders(ftx_currency)
+				c0 := make(chan bool, 1)
+				c1 := make(chan float64, 1)
+				c2 := make(chan int, 1)
+				var temp sync.WaitGroup
+
+				temp.Add(1)
+				go order(client, ask_timer, &temp, c0, c1, c2)
+				temp.Wait()
+
+				isFilled = <-c0
+				bid_price_filled = <-c1
+				ID = <-c2
+
+				if isFilled {
+
+					isLong = false
+					fmt.Println("Ask Order Filled: ", ask_price_filled)
+					fmt.Println("")
+
+				} else {
+
+					fmt.Println("Bid Order Not Filled")
+					fmt.Println("Canceling Order")
+					fmt.Println("")
+
+					resp, err := client.CancelOrder(int64(ID))
 
 					if err != nil {
 						log.Println(err)
 					}
 
-					fmt.Println("Open Orders: ", resp.Success)
+					fmt.Println("Order Cancelled: ", resp.Success)
 
-				}()
+					/*
+						- If Scalping, we still have risk!
+						- We need to replace the sell orders
+						- Capitulate
+					*/
 
-				ask_price_filled = resp.Result.AvgFillPrice
+					OT.Market = ftx_currency
+					OT.Side = "sell"
+					OT.Price = ftx_weighted_midpoint
+					OT.Type = "limit"
+					OT.Size = trade_size
+					OT.PostOnly = false
+
+					/*
+						- Place Ask Order from Avellaneda
+						- Capitulation Order
+					*/
+
+					resp2, err := client.PlaceOrder(OT.Market, OT.Side, OT.Price, OT.Type, OT.Size, OT.ReduceOnly, OT.Ioc, OT.PostOnly)
+
+					if err != nil {
+						log.Println(err)
+					}
+
+					fmt.Println("Order Result: ", resp2)
+
+				}
 
 			}
 
-			fmt.Println("Spread Captured (Total Profit): ", (ask_price_filled - bid_price_filled))
-			fmt.Println("Running PnL (Total Profit of Trial): ", pnl)
+			/*
+				- If the spread was captured, how did we do?
+				- What are our current statistics?
+			*/
+
+			if isCaptured {
+
+				pnl += (ask_price_filled - bid_price_filled)
+				fmt.Println("Spread Captured (Total Profit): ", (ask_price_filled - bid_price_filled))
+				fmt.Println("Running PnL (Total Profit of Trial): ", pnl)
+				fmt.Println("")
+
+			}
 
 		}
 
