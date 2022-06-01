@@ -3,6 +3,7 @@ module v2
 go 1.17
 
 require (
+	github.com/gorilla/websocket v1.5.0
 	github.com/montanaflynn/stats v0.6.6
 	go.mongodb.org/mongo-driver v1.9.1
 )

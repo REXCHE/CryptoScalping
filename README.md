@@ -5,6 +5,8 @@
     - Open source most advanced, high performance crypto market making system   
     - Effortlessly find a statistical edge in high frequency trading 
     - Generate automated alpha with neutral SPX beta
+    - Engineer Low Latency High Frequency Trading Systems
+    - Continuously Hedge Risk Exposure
 
 ## 1. Avellaneda Stoikov
 
@@ -37,6 +39,7 @@
     - Coinbase
     - Crypto
     - FTX US
+        - WebSocket Stream Included
     - Kraken 
     - Gemini
 

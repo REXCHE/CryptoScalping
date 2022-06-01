@@ -68,3 +68,18 @@ func (client *FtxClient) CancelOrder(orderId int64) (Response, error) {
 	return deleteResponse, err
 
 }
+
+func (client *FtxClient) GetFeeSchedule(market string) (Schedule, error) {
+
+	var fees Schedule
+	resp, err := client._get("fills?market="+market, []byte(""))
+
+	if err != nil {
+		log.Println("Error GetFeeSchedule", err)
+		return fees, err
+	}
+
+	err = _processResponse(resp, &fees)
+	return fees, err
+
+}

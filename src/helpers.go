@@ -9,7 +9,7 @@ import (
 	o "v2/src/Orders"
 )
 
-func order(client *o.FtxClient, timer *time.Timer, w *sync.WaitGroup, c0 chan bool, c1 chan float64, c2 chan int) {
+func order(client *o.FtxClient, timer *time.Timer, w *sync.WaitGroup, c0 chan bool) {
 
 	<-timer.C
 
@@ -23,8 +23,8 @@ func order(client *o.FtxClient, timer *time.Timer, w *sync.WaitGroup, c0 chan bo
 
 	if len(resp.Result) == 0 {
 		c0 <- true
-		c1 <- resp.Result[0].AvgFillPrice
-		c2 <- int(resp.Result[0].ID)
+	} else {
+		c0 <- false
 	}
 
 	w.Done()

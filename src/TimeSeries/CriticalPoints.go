@@ -8,6 +8,7 @@ func GetCriticalPoint(price_data []float64) float64 {
 
 		Output:
 		1. The Critical Point
+
 	*/
 
 	return 0

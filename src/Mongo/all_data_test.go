@@ -43,6 +43,8 @@ func TestMongoDB(t *testing.T) {
 	var trade_count float64
 	var average_win float64
 	var average_loss float64
+	var max_win float64
+	var max_loss float64
 
 	// Compute PnL
 	for i := 0; i < (len(orderbook_data) - 1); i++ {
@@ -53,10 +55,22 @@ func TestMongoDB(t *testing.T) {
 			pnl += trade_result
 
 			if trade_result > 0 {
+
 				win_rate++
 				average_win += trade_result
+
+				if trade_result > max_win {
+					max_win = trade_result
+				}
+
 			} else {
+
 				average_loss += trade_result
+
+				if trade_result < max_loss {
+					max_loss = trade_result
+				}
+
 			}
 
 			trade_count++
@@ -72,5 +86,8 @@ func TestMongoDB(t *testing.T) {
 	fmt.Println("Trade Count: ", trade_count)
 	fmt.Println("Average Win: ", (average_win / trade_count))
 	fmt.Println("Average Loss: ", (average_loss / trade_count))
+	fmt.Println("Max Win: ", max_win)
+	fmt.Print("Max Loss: ", max_loss)
+	fmt.Println("")
 
 }
