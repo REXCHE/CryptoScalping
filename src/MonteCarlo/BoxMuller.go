@@ -3,6 +3,7 @@ package MonteCarlo
 import (
 	"math"
 	"math/rand"
+	"sync"
 )
 
 func GetBoxMullerTransform(simulation_length int, simulation_count int) [][]float64 {
@@ -17,27 +18,30 @@ func GetBoxMullerTransform(simulation_length int, simulation_count int) [][]floa
 	*/
 
 	var rv [][]float64
-
-	count := 0
-
+	var wg sync.WaitGroup
+	wg.Add(simulation_count)
 	c := make(chan []float64, simulation_count)
 
-	for {
+	for i := 0; i < simulation_count; i++ {
 
-		go boxMullerParallel(simulation_length, c)
-		arr := <-c
-		rv = append(rv, arr)
-		count++
-
-		if count >= simulation_count {
-			return rv
-		}
+		go boxMullerParallel(simulation_length, c, &wg)
 
 	}
 
+	wg.Wait()
+
+	for i := 0; i < simulation_count; i++ {
+
+		arr := <-c
+		rv = append(rv, arr)
+
+	}
+
+	return rv
+
 }
 
-func boxMullerParallel(simulation_length int, c chan []float64) {
+func boxMullerParallel(simulation_length int, c chan []float64, wg *sync.WaitGroup) {
 
 	var temp []float64
 
@@ -55,5 +59,6 @@ func boxMullerParallel(simulation_length int, c chan []float64) {
 	}
 
 	c <- temp
+	wg.Done()
 
 }

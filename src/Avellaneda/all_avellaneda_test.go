@@ -39,3 +39,9 @@ func TestOptimalSpread(t *testing.T) {
 	fmt.Print("Avellaneda Optimal Spread: ", GetOptimalSpread(midpoint, gamma, kappa, sigma, tau))
 
 }
+
+func TestAvellanedaSimulation(t *testing.T) {
+
+	AvellanedaSimulation()
+
+}

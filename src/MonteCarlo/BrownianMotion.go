@@ -1,6 +1,9 @@
 package MonteCarlo
 
-import "math"
+import (
+	"math"
+	"sync"
+)
 
 func GetStockSimulation(stock_price float64, drift float64, volatility float64, period_length int, simulation_count int) [][]float64 {
 
@@ -17,31 +20,32 @@ func GetStockSimulation(stock_price float64, drift float64, volatility float64, 
 	*/
 
 	var BM [][]float64
-
-	rand := GetBoxMullerTransform(period_length, simulation_count)
 	dt := 1.0 / float64(period_length)
-	count := 0
-
+	var wg sync.WaitGroup
+	wg.Add(simulation_count)
 	c := make(chan []float64, simulation_count)
+	rand := GetBoxMullerTransform(period_length, simulation_count)
 
-	for {
+	for i := 0; i < simulation_count; i++ {
 
-		go stockParallel(rand[count], drift, volatility, stock_price, dt, c)
-		arr := <-c
-		BM = append(BM, arr)
-		count++
-
-		if count >= simulation_count {
-
-			return BM
-
-		}
+		go stockParallel(rand[i], drift, volatility, stock_price, dt, c, &wg)
 
 	}
 
+	wg.Wait()
+
+	for i := 0; i < simulation_count; i++ {
+
+		arr := <-c
+		BM = append(BM, arr)
+
+	}
+
+	return BM
+
 }
 
-func stockParallel(rand []float64, drift float64, volatility float64, stock_price float64, dt float64, c chan []float64) {
+func stockParallel(rand []float64, drift float64, volatility float64, stock_price float64, dt float64, c chan []float64, wg *sync.WaitGroup) {
 
 	var temp []float64
 
@@ -60,5 +64,6 @@ func stockParallel(rand []float64, drift float64, volatility float64, stock_pric
 	}
 
 	c <- temp
+	wg.Done()
 
 }

@@ -21,6 +21,7 @@
     - Advanced Time Series Prediction
     - High Probability Trades
     - Short Term Directional Bets
+    - Capture Wide Non Symmetric Spreads
 
 ## 3. Monte Carlo Simulation
 
@@ -28,6 +29,7 @@
     - Heston Stochastic Volatility 
     - Ornstein Uhlenbeck Mean Reversion
     - Geometric Brownian Motion 
+    - Cholesky Monte Carlo
 
 ## 4. Advanced Multithreading Capability
 

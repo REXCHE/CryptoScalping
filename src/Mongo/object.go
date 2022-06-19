@@ -27,8 +27,9 @@ type MarketMakingData struct {
 	FTXBook     []float64
 
 	// Additional Shit
-	IsSkewed bool
-	Spread   float64
+	IsSkewed         bool
+	OptimalSpread    float64
+	AggressiveSpread float64
 
 	// OHLC
 	Open  float64

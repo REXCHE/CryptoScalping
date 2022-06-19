@@ -91,7 +91,8 @@ func AppendMongo(client *mongo.Client, class MarketMakingData, capacity int64, c
 			{Key: "ftxBook", Value: class.FTXBook},
 
 			{Key: "isSkewed", Value: class.IsSkewed},
-			{Key: "spread", Value: class.Spread},
+			{Key: "optimalSpread", Value: class.OptimalSpread},
+			{Key: "aggressiveSpread", Value: class.AggressiveSpread},
 
 			{Key: "open", Value: class.Open},
 			{Key: "high", Value: class.High},

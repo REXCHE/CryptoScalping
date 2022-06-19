@@ -143,7 +143,7 @@ func getTrades(class FTXTrades) []float64 {
 
 }
 
-func GetFTXOHLC(currency string, c chan []float64, w *sync.WaitGroup, resolution string) {
+func GetFTXOHLC(currency string, c chan [][]float64, w *sync.WaitGroup, resolution string) {
 
 	/*
 		Method Returns the OHLC from FTX Book
@@ -155,7 +155,7 @@ func GetFTXOHLC(currency string, c chan []float64, w *sync.WaitGroup, resolution
 
 	if err != nil {
 		log.Println("Error Fetching FTX OHLC")
-		c <- []float64{0}
+		c <- [][]float64{{0}}
 		w.Done()
 		return
 	}
@@ -166,7 +166,7 @@ func GetFTXOHLC(currency string, c chan []float64, w *sync.WaitGroup, resolution
 
 	if err != nil {
 		log.Println("Error Fetching FTX OHLC")
-		c <- []float64{0}
+		c <- [][]float64{{0}}
 		w.Done()
 		return
 	}
@@ -183,14 +183,21 @@ func GetFTXOHLC(currency string, c chan []float64, w *sync.WaitGroup, resolution
 
 }
 
-func getCandles(class FTXOHLC) []float64 {
+func getCandles(class FTXOHLC) [][]float64 {
 
-	var arr []float64
+	var arr [][]float64
 
-	arr = append(arr, class.Result[0].Open)
-	arr = append(arr, class.Result[0].High)
-	arr = append(arr, class.Result[0].Low)
-	arr = append(arr, class.Result[0].Close)
+	for i := 0; i < len(class.Result); i++ {
+
+		var temp []float64
+
+		temp = append(temp, class.Result[i].Open)
+		temp = append(temp, class.Result[i].High)
+		temp = append(temp, class.Result[i].Low)
+		temp = append(temp, class.Result[i].Close)
+
+		arr = append(arr, temp)
+	}
 
 	return arr
 

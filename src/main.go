@@ -132,7 +132,7 @@ func main() {
 		ftx_chan := make(chan []float64, 1)
 
 		trade_chan := make(chan []float64, 1)
-		ohlc_chan := make(chan []float64, 1)
+		ohlc_chan := make(chan [][]float64, 1)
 
 		/*
 			Synchronize the Threads !
@@ -258,9 +258,6 @@ func main() {
 			- Only Trigger if Bid Skew
 		*/
 
-		// We need the Order Ticket
-		var OT o.NewOrder
-
 		// Avellaneda Parameters
 		gamma := 0.20
 		kappa := ftx_book[2] + ftx_book[3]
@@ -314,16 +311,17 @@ func main() {
 
 			MMD.IsSkewed = isSkewed
 
-			MMD.Spread = optimal_spread
+			MMD.OptimalSpread = optimal_spread
+			MMD.AggressiveSpread = aggressive_spread
 			MMD.Gamma = gamma
 			MMD.Kappa = kappa
 			MMD.Tau = tau
 			MMD.Sigma = sigma
 
-			MMD.Open = ohlc[0]
-			MMD.High = ohlc[1]
-			MMD.Low = ohlc[2]
-			MMD.Close = ohlc[3]
+			MMD.Open = ohlc[0][0]
+			MMD.High = ohlc[0][1]
+			MMD.Low = ohlc[0][2]
+			MMD.Close = ohlc[0][3]
 
 			MMD.RecentTrades = recent_trades
 			MMD.Volatility = volatility
@@ -342,17 +340,24 @@ func main() {
 		*/
 
 		if optimal_spread < 1.0 {
+
 			placeOrder = false
 			fmt.Println("Optimal Spread Too Small")
 			fmt.Println("")
+
 		} else {
+
 			placeOrder = true
 			fmt.Println("Optimal Spread is Profitable")
 			fmt.Println("")
+
 		}
 
 		var bid_price_filled float64
 		var ask_price_filled float64
+
+		// We need the Order Ticket
+		var OT o.NewOrder
 
 		if placeOrder {
 
@@ -483,6 +488,7 @@ func main() {
 					- Place Ask Order from Avellaneda
 				*/
 
+				fmt.Println(OT)
 				resp, err := client.PlaceOrder(OT.Market, OT.Side, OT.Price, OT.Type, OT.Size, OT.ReduceOnly, OT.Ioc, OT.PostOnly)
 
 				if err != nil {
