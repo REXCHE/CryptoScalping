@@ -2,7 +2,7 @@ package MonteCarlo
 
 import "math"
 
-func Cholesky(mu float64, sigma float64, rho float64, stock_price float64, simulation_length int, simulation_count int) ([][]float64, [][]float64) {
+func Cholesky(mu float64, sigma [][]float64, rho float64, stock_price float64, simulation_length int, simulation_count int) ([][]float64, [][]float64) {
 
 	var c1 [][]float64
 	var c2 [][]float64
@@ -25,12 +25,12 @@ func Cholesky(mu float64, sigma float64, rho float64, stock_price float64, simul
 			x1 := rv1[i][j]
 			x2 := (rho * rv1[i][j]) + (math.Sqrt(1-math.Pow(rho, 2)) * rv2[i][j])
 
-			euler_spot := t1[j-1] + (mu * t1[j-1] * dt) + (sigma * t1[j-1] * x1 * math.Sqrt(dt))
-			milstein_spot := euler_spot + (0.25 * math.Pow(sigma, 2) * t1[j-1] * dt * (math.Pow(x1*math.Sqrt(dt), 2) - 1))
+			euler_spot := t1[j-1] + (mu * t1[j-1] * dt) + (sigma[i][j] * t1[j-1] * x1 * math.Sqrt(dt))
+			milstein_spot := euler_spot + (0.25 * math.Pow(sigma[i][j], 2) * t1[j-1] * dt * (math.Pow(x1*math.Sqrt(dt), 2) - 1))
 			t1 = append(t1, milstein_spot)
 
-			euler_perp := t2[j-1] + (mu * t2[j-1] * dt) + (sigma * t2[j-1] * x2 * math.Sqrt(dt))
-			milstein_perp := euler_perp + (0.25 * math.Pow(sigma, 2) * t2[j-1] * dt * (math.Pow(x2*math.Sqrt(dt), 2) - 1))
+			euler_perp := t2[j-1] + (mu * t2[j-1] * dt) + (sigma[i][j] * t2[j-1] * x2 * math.Sqrt(dt))
+			milstein_perp := euler_perp + (0.25 * math.Pow(sigma[i][j], 2) * t2[j-1] * dt * (math.Pow(x2*math.Sqrt(dt), 2) - 1))
 			t2 = append(t2, milstein_perp)
 
 		}
