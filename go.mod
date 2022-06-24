@@ -8,7 +8,10 @@ require (
 	go.mongodb.org/mongo-driver v1.9.1
 )
 
-require gonum.org/v1/plot v0.11.0
+require (
+	github.com/streadway/amqp v1.0.0
+	gonum.org/v1/plot v0.11.0
+)
 
 require (
 	git.sr.ht/~sbinet/gg v0.3.1 // indirect
@@ -32,6 +35,6 @@ require (
 )
 
 require (
-	golang.org/x/exp v0.0.0-20220613132600-b0d781184e0d // indirect
+	golang.org/x/exp v0.0.0-20220613132600-b0d781184e0d
 	gonum.org/v1/gonum v0.11.0
 )
