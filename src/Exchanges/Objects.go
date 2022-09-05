@@ -18,13 +18,23 @@ type CoinbaseBook struct {
 	Kraken
 */
 
+// type KrakenBook struct {
+// 	Error  []interface{} `json:"error"`
+// 	Result struct {
+// 		Xethzusd struct {
+// 			Asks [][]interface{} `json:"asks"`
+// 			Bids [][]interface{} `json:"bids"`
+// 		} `json:"XETHZUSD"`
+// 	} `json:"result"`
+// }
+
 type KrakenBook struct {
 	Error  []interface{} `json:"error"`
 	Result struct {
-		Xethzusd struct {
+		Solusd struct {
 			Asks [][]interface{} `json:"asks"`
 			Bids [][]interface{} `json:"bids"`
-		} `json:"XETHZUSD"`
+		} `json:"SOLUSD"`
 	} `json:"result"`
 }
 

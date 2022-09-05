@@ -55,22 +55,22 @@ func GetKrakenOrderBook(currency string, c chan []float64, w *sync.WaitGroup) {
 func getKrakenKappa(kb KrakenBook, depth int) (float64, float64, float64, float64) {
 
 	// Return This
-	best_bid, _ := strconv.ParseFloat(kb.Result.Xethzusd.Bids[0][0].(string), 64)
-	bid_amount, _ := strconv.ParseFloat(kb.Result.Xethzusd.Bids[0][1].(string), 64)
+	best_bid, _ := strconv.ParseFloat(kb.Result.Solusd.Bids[0][0].(string), 64)
+	bid_amount, _ := strconv.ParseFloat(kb.Result.Solusd.Bids[0][1].(string), 64)
 	bid_kappa := best_bid * bid_amount
 
-	best_ask, _ := strconv.ParseFloat(kb.Result.Xethzusd.Asks[0][0].(string), 64)
-	ask_amount, _ := strconv.ParseFloat(kb.Result.Xethzusd.Asks[0][1].(string), 64)
+	best_ask, _ := strconv.ParseFloat(kb.Result.Solusd.Asks[0][0].(string), 64)
+	ask_amount, _ := strconv.ParseFloat(kb.Result.Solusd.Asks[0][1].(string), 64)
 	ask_kappa := best_ask * ask_amount
 
 	for i := 1; i < depth; i++ {
 
-		best_bid, _ := strconv.ParseFloat(kb.Result.Xethzusd.Bids[0][0].(string), 64)
-		bid_amount, _ := strconv.ParseFloat(kb.Result.Xethzusd.Bids[0][1].(string), 64)
+		best_bid, _ := strconv.ParseFloat(kb.Result.Solusd.Bids[0][0].(string), 64)
+		bid_amount, _ := strconv.ParseFloat(kb.Result.Solusd.Bids[0][1].(string), 64)
 		bid_kappa += best_bid * bid_amount
 
-		best_ask, _ := strconv.ParseFloat(kb.Result.Xethzusd.Asks[0][0].(string), 64)
-		ask_amount, _ := strconv.ParseFloat(kb.Result.Xethzusd.Asks[0][1].(string), 64)
+		best_ask, _ := strconv.ParseFloat(kb.Result.Solusd.Asks[0][0].(string), 64)
+		ask_amount, _ := strconv.ParseFloat(kb.Result.Solusd.Asks[0][1].(string), 64)
 		ask_kappa += best_ask * ask_amount
 	}
 

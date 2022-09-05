@@ -35,11 +35,17 @@ import (
 	Each Exchange has a Unique Convention for Currency Pairs
 */
 
-var coinbase_currency string = "ETH-USD"
-var kraken_currency string = "ETHUSD"
-var gemini_currency string = "ETHUSD"
-var crypto_currency string = "ETH_USDT"
-var ftx_currency string = "ETH/USD"
+// var coinbase_currency string = "ETH-USD"
+// var kraken_currency string = "ETHUSD"
+// var gemini_currency string = "ETHUSD"
+// var crypto_currency string = "ETH_USDT"
+// var ftx_currency string = "ETH/USD"
+
+var coinbase_currency string = "SOL-USD"
+var kraken_currency string = "SOLUSD"
+var gemini_currency string = "SOLUSD"
+var crypto_currency string = "SOL_USDT"
+var ftx_currency string = "SOL/USD"
 
 /*
 	Global Variables:
